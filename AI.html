@@ -1,47 +1,370 @@
 <!DOCTYPE html>
-<html><head><meta charset="UTF-8"><title>Sales Performance Dashboard</title>
-<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
-<style>
-body{font-family:Segoe UI;margin:0;background:#f4f7fb}
-.header{background:#1c237e;color:#fff;padding:15px;font-size:22px;font-weight:bold}
-.container{padding:20px}.upload,.chart,.card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
-.upload{padding:20px;margin-bottom:20px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
-.card{padding:20px}.card h2{margin:0;color:#1c237e}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.chart{padding:15px}table{width:100%;border-collapse:collapse;background:#fff}th{background:#1c237e;color:#fff;padding:8px}td{padding:8px;border-bottom:1px solid #ddd;text-align:center}tfoot{font-weight:bold;background:#eee}
-button{padding:10px 20px}
-</style></head><body>
-<div class="header">Sales Performance Dashboard</div>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>Sales Dashboard</title>
+
+    <script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+    <style>
+        body{
+            font-family:Segoe UI;
+            background:#f5f5f5;
+            padding:40px;
+        }
+
+        .container{
+            width:500px;
+            margin:auto;
+            background:white;
+            padding:30px;
+            border-radius:10px;
+            box-shadow:0 2px 10px rgba(0,0,0,.15);
+            text-align:center;
+        }
+
+        input{
+            margin-top:20px;
+        }
+
+        button{
+            margin-top:20px;
+            padding:10px 25px;
+            border:none;
+            background:#1565c0;
+            color:white;
+            border-radius:5px;
+            cursor:pointer;
+            font-size:16px;
+        }
+
+        button:hover{
+            background:#0d47a1;
+        }
+    </style>
+
+</head>
+
+<body>
+
 <div class="container">
-<div class="upload"><input type="file" id="file" accept=".json"> <button onclick="exportTable()">Export Excel</button></div>
-<div class="cards">
-<div class="card"><h2 id="dealerCount">0</h2><span>Total Dealers</span></div>
-<div class="card"><h2 id="orderValue">0</h2><span>Total Order Value</span></div>
-<div class="card"><h2 id="suggested">0</h2><span>Total Suggested Orders</span></div>
-<div class="card"><h2 id="asmCount">0</h2><span>Total ASM</span></div>
+
+<h2>Availability Index</h2>
+
+<input type="file" id="jsonFile" accept=".json">
+
+<br>
+
+<button onclick="openDashboard()">Generate Dashboard</button>
+
 </div>
-<div class="grid">
-<div class="chart"><div id="barChart"></div></div>
-<div class="chart"><div id="pieChart"></div></div>
-<div class="chart"><div id="dealerChart"></div></div>
-<div class="chart"><div id="suggestChart"></div></div>
-</div><br><h2>Pivot Summary</h2>
-<table id="pivot"><thead><tr><th>ASM Name</th><th>Dealer Count</th><th>Order Value</th><th>Suggested Order</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
-</div>
+
+
 <script>
-file.onchange=e=>{let r=new FileReader();r.onload=()=>build(JSON.parse(r.result));r.readAsText(e.target.files[0]);};
-function build(data){
-let p={},td=0,tv=0,ts=0;
-data.forEach(r=>{let a=r["ASM Name"]||"Unknown";p[a]??={d:0,v:0,s:0};p[a].d++;p[a].v+=+r.OrderValue||0;p[a].s+=+r.SuggestedOrder||0;});
-let tb=document.querySelector("#pivot tbody");tb.innerHTML="";
-let labels=[],vals=[],deals=[],sugs=[];
-Object.keys(p).sort().forEach(a=>{let x=p[a];td+=x.d;tv+=x.v;ts+=x.s;labels.push(a);vals.push(x.v);deals.push(x.d);sugs.push(x.s);
-tb.innerHTML+=`<tr><td>${a}</td><td>${x.d}</td><td>${x.v.toLocaleString()}</td><td>${x.s}</td></tr>`;});
-document.querySelector("#pivot tfoot").innerHTML=`<tr><td>Grand Total</td><td>${td}</td><td>${tv.toLocaleString()}</td><td>${ts}</td></tr>`;
-dealerCount.innerText=td.toLocaleString();orderValue.innerText="₹ "+tv.toLocaleString();suggested.innerText=ts;asmCount.innerText=labels.length;
-Plotly.newPlot('barChart',[{type:'bar',orientation:'h',y:labels,x:vals}],{title:'Order Value by ASM'});
-Plotly.newPlot('pieChart',[{type:'pie',labels:labels,values:vals,hole:.5}],{title:'Order Value Share'});
-Plotly.newPlot('dealerChart',[{type:'bar',x:labels,y:deals}],{title:'Dealer Count'});
-Plotly.newPlot('suggestChart',[{type:'scatter',mode:'lines+markers',x:labels,y:sugs}],{title:'Suggested Orders'});
+
+function openDashboard(){
+
+const file=document.getElementById("jsonFile").files[0];
+
+if(!file){
+alert("Please select JSON file");
+return;
 }
-function exportTable(){let a=document.createElement('a');a.href='data:application/vnd.ms-excel,'+encodeURIComponent(pivot.outerHTML);a.download='Pivot.xls';a.click();}
-</script></body></html>
+
+const reader=new FileReader();
+
+reader.onload=function(e){
+
+const json=e.target.result;
+
+const newTab=window.open("");
+
+newTab.document.write(`
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="UTF-8">
+
+<title>Sales Dashboard</title>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+
+body{
+
+font-family:Segoe UI;
+
+margin:20px;
+
+background:#fafafa;
+
+}
+
+h2{
+
+margin-bottom:15px;
+
+}
+
+select{
+
+padding:8px;
+
+font-size:14px;
+
+margin-bottom:20px;
+
+}
+
+table{
+
+border-collapse:collapse;
+
+width:100%;
+
+background:white;
+
+}
+
+th{
+
+background:#4da3ff;
+
+color:white;
+
+padding:10px;
+
+}
+
+td{
+
+padding:8px;
+
+text-align:center;
+
+border:1px solid #ddd;
+
+}
+
+tfoot{
+
+font-weight:bold;
+
+background:#eee;
+
+}
+
+#chart{
+
+margin-top:40px;
+
+height:450px;
+
+}
+
+</style>
+
+</head>
+
+<body>
+
+<h2>Sales Performance Dashboard</h2>
+
+<label><b>Business Head :</b></label>
+
+<select id="businessHead"></select>
+
+<div id="pivot"></div>
+
+<div id="chart"></div>
+
+<script>
+
+const data=${json};
+
+const dropdown=document.getElementById("businessHead");
+
+const heads=[...new Set(data.map(x=>x["Business Head"]))];
+
+dropdown.innerHTML="<option value='All'>All</option>";
+
+heads.forEach(x=>{
+
+dropdown.innerHTML+=\`<option>\${x}</option>\`;
+
+});
+
+dropdown.onchange=render;
+
+render();
+
+function render(){
+
+let bh=dropdown.value;
+
+let filtered=bh=="All"
+
+?data
+
+:data.filter(x=>x["Business Head"]===bh);
+
+let pivot={};
+
+filtered.forEach(r=>{
+
+let zm=r["ZM Name"] || "Blank";
+
+if(!pivot[zm]){
+
+pivot[zm]={
+
+count:0,
+
+qty:0,
+
+value:0
+
+};
+
+}
+
+pivot[zm].count++;
+
+pivot[zm].qty+=Number(r["SuggestedOrder"]||0);
+
+pivot[zm].value+=Number(r["OrderValue"]||0);
+
+});
+
+let rows="";
+
+let totalCount=0;
+
+let totalQty=0;
+
+let totalValue=0;
+
+let labels=[];
+
+let values=[];
+
+Object.keys(pivot).sort().forEach(zm=>{
+
+let p=pivot[zm];
+
+totalCount+=p.count;
+
+totalQty+=p.qty;
+
+totalValue+=p.value;
+
+labels.push(zm);
+
+values.push(p.value);
+
+rows+=\`
+
+<tr>
+
+<td>\${zm}</td>
+
+<td>\${p.count.toLocaleString()}</td>
+
+<td>\${p.qty.toLocaleString()}</td>
+
+<td>\${p.value.toLocaleString()}</td>
+
+</tr>
+
+\`;
+
+});
+
+document.getElementById("pivot").innerHTML=\`
+
+<table>
+
+<thead>
+
+<tr>
+
+<th>ZM Name</th>
+
+<th>Count of DealerName</th>
+
+<th>Suggested Order</th>
+
+<th>Order Value</th>
+
+</tr>
+
+</thead>
+
+<tbody>
+
+\${rows}
+
+</tbody>
+
+<tfoot>
+
+<tr>
+
+<td>Grand Total</td>
+
+<td>\${totalCount.toLocaleString()}</td>
+
+<td>\${totalQty.toLocaleString()}</td>
+
+<td>\${totalValue.toLocaleString()}</td>
+
+</tr>
+
+</tfoot>
+
+</table>
+
+\`;
+
+Plotly.newPlot("chart",[{
+
+x:labels,
+
+y:values,
+
+type:"bar"
+
+}],{
+
+title:"Order Value by ZM",
+
+height:450
+
+});
+
+}
+
+</script>
+
+</body>
+
+</html>
+
+`);
+
+};
+
+reader.readAsText(file);
+
+}
+
+</script>
+
+</body>
+
+</html>
