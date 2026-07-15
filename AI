@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>Sales Performance Dashboard</title>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<style>
+body{font-family:Segoe UI;margin:0;background:#f4f7fb}
+.header{background:#1c237e;color:#fff;padding:15px;font-size:22px;font-weight:bold}
+.container{padding:20px}.upload,.chart,.card{background:#fff;border-radius:10px;box-shadow:0 2px 8px rgba(0,0,0,.15)}
+.upload{padding:20px;margin-bottom:20px}.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin-bottom:20px}
+.card{padding:20px}.card h2{margin:0;color:#1c237e}.grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.chart{padding:15px}table{width:100%;border-collapse:collapse;background:#fff}th{background:#1c237e;color:#fff;padding:8px}td{padding:8px;border-bottom:1px solid #ddd;text-align:center}tfoot{font-weight:bold;background:#eee}
+button{padding:10px 20px}
+</style></head><body>
+<div class="header">Sales Performance Dashboard</div>
+<div class="container">
+<div class="upload"><input type="file" id="file" accept=".json"> <button onclick="exportTable()">Export Excel</button></div>
+<div class="cards">
+<div class="card"><h2 id="dealerCount">0</h2><span>Total Dealers</span></div>
+<div class="card"><h2 id="orderValue">0</h2><span>Total Order Value</span></div>
+<div class="card"><h2 id="suggested">0</h2><span>Total Suggested Orders</span></div>
+<div class="card"><h2 id="asmCount">0</h2><span>Total ASM</span></div>
+</div>
+<div class="grid">
+<div class="chart"><div id="barChart"></div></div>
+<div class="chart"><div id="pieChart"></div></div>
+<div class="chart"><div id="dealerChart"></div></div>
+<div class="chart"><div id="suggestChart"></div></div>
+</div><br><h2>Pivot Summary</h2>
+<table id="pivot"><thead><tr><th>ASM Name</th><th>Dealer Count</th><th>Order Value</th><th>Suggested Order</th></tr></thead><tbody></tbody><tfoot></tfoot></table>
+</div>
+<script>
+file.onchange=e=>{let r=new FileReader();r.onload=()=>build(JSON.parse(r.result));r.readAsText(e.target.files[0]);};
+function build(data){
+let p={},td=0,tv=0,ts=0;
+data.forEach(r=>{let a=r["ASM Name"]||"Unknown";p[a]??={d:0,v:0,s:0};p[a].d++;p[a].v+=+r.OrderValue||0;p[a].s+=+r.SuggestedOrder||0;});
+let tb=document.querySelector("#pivot tbody");tb.innerHTML="";
+let labels=[],vals=[],deals=[],sugs=[];
+Object.keys(p).sort().forEach(a=>{let x=p[a];td+=x.d;tv+=x.v;ts+=x.s;labels.push(a);vals.push(x.v);deals.push(x.d);sugs.push(x.s);
+tb.innerHTML+=`<tr><td>${a}</td><td>${x.d}</td><td>${x.v.toLocaleString()}</td><td>${x.s}</td></tr>`;});
+document.querySelector("#pivot tfoot").innerHTML=`<tr><td>Grand Total</td><td>${td}</td><td>${tv.toLocaleString()}</td><td>${ts}</td></tr>`;
+dealerCount.innerText=td.toLocaleString();orderValue.innerText="₹ "+tv.toLocaleString();suggested.innerText=ts;asmCount.innerText=labels.length;
+Plotly.newPlot('barChart',[{type:'bar',orientation:'h',y:labels,x:vals}],{title:'Order Value by ASM'});
+Plotly.newPlot('pieChart',[{type:'pie',labels:labels,values:vals,hole:.5}],{title:'Order Value Share'});
+Plotly.newPlot('dealerChart',[{type:'bar',x:labels,y:deals}],{title:'Dealer Count'});
+Plotly.newPlot('suggestChart',[{type:'scatter',mode:'lines+markers',x:labels,y:sugs}],{title:'Suggested Orders'});
+}
+function exportTable(){let a=document.createElement('a');a.href='data:application/vnd.ms-excel,'+encodeURIComponent(pivot.outerHTML);a.download='Pivot.xls';a.click();}
+</script></body></html>
